@@ -12,48 +12,43 @@ This is a lightweight web application hosted on AWS that allows users to upload,
 
 The application consists of the following components:
 
-- **Image Storage**: <br>
-  Uploaded images are stored in a private S3 bucket named `pcg-images`.
+-   **Image Storage**: <br>
+    Uploaded images are stored in a private S3 bucket named `pcg-images`.
 
-- **Frontend Hosting**: <br>
-  A static HTML file, served as the frontend, is stored in another private S3 bucket named `pcg-frontend`.
+-   **Frontend Hosting**: <br>
+    A static HTML file, served as the frontend, is stored in another private S3 bucket named `pcg-frontend`.
 
-- **Access Control**: <br>
-  Both S3 buckets are set to private, meaning they are not directly accessible by clients. All access to these resources is mediated through AWS Lambda functions and presigned URLs.
+-   **Access Control**: <br>
+    Both S3 buckets are set to private, meaning they are not directly accessible by clients. All access to these resources is mediated through AWS Lambda functions and presigned URLs.
 
-- **Lambda Functions and Endpoints**:
+-   **Lambda Functions and Endpoints**:
 
-      - `GET /get-upload-url`: <br>
+    - `GET /get-upload-url`: <br>
+Handled by the `get-upload-url` Lambda, this generates a presigned S3 URL that allows the client to upload an image directly to the `pcg-images` bucket.
 
-  Handled by the `get-upload-url` Lambda, this generates a presigned S3 URL that allows the client to upload an image directly to the `pcg-images` bucket.
+    - `GET /images/{filename}`: <br>
+Handled by the `images-proxy` Lambda, this retrieves all uploaded filenames.
 
-      - `GET /images/{filename}`: <br>
+    - `GET /images/{filename}`: <br>
+Handled by the `images-proxy` Lambda, this retrieves a presigned URL for an image so the client can view it.
 
-  Handled by the `images-proxy` Lambda, this retrieves all uploaded filenames.
+    - `DELETE /images/{filename}`: <br>
+Handled by the `images-delete-proxy` Lambda, this deletes a specified image from the `pcg-images` bucket.
 
-      - `GET /images/{filename}`: <br>
+    - `GET /files`: <br>
+Handled by the `frontend-proxy` Lambda, this fetches the HTML file from `pcg-frontend` and returns it to the client.
 
-  Handled by the `images-proxy` Lambda, this retrieves a presigned URL for an image so the client can view it.
+-   **Presigned URL Workflow**: <br>
+    Clients never access the S3 buckets directly. Instead, they receive presigned URLs from Lambda functions, enabling secure direct uploads and downloads to and from S3.
 
-      - `DELETE /images/{filename}`: <br>
+-   **API Gateway**: <br>
 
-  Handled by the `images-delete-proxy` Lambda, this deletes a specified image from the `pcg-images` bucket.
+    -   All client requests pass through an API Gateway, which:
 
-      - `GET /files`: <br>
+    -   Routes requests to the appropriate Lambda functions.
 
-  Handled by the `frontend-proxy` Lambda, this fetches the HTML file from `pcg-frontend` and returns it to the client.
+    -   Restricts access to whitelisted IP addresses only, enhancing security.
 
-- **Presigned URL Workflow**: <br>
-  Clients never access the S3 buckets directly. Instead, they receive presigned URLs from Lambda functions, enabling secure direct uploads and downloads to and from S3.
+    -   Ensures all communication with AWS resources follows the correct flow through trusted entry points.
 
-- **API Gateway**: <br>
-
-  - All client requests pass through an API Gateway, which:
-
-  - Routes requests to the appropriate Lambda functions.
-
-  - Restricts access to whitelisted IP addresses only, enhancing security.
-
-  - Ensures all communication with AWS resources follows the correct flow through trusted entry points.
-
-  - This setup ensures that all file operations are controlled, secure, and auditable, without exposing the underlying storage directly to users.
+    -   This setup ensures that all file operations are controlled, secure, and auditable, without exposing the underlying storage directly to users.
