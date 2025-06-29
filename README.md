@@ -26,7 +26,7 @@ The application consists of the following components:
     - `GET /get-upload-url`: <br>
 Handled by the `get-upload-url` Lambda, this generates a presigned S3 URL that allows the client to upload an image directly to the `pcg-images` bucket.
 
-    - `GET /images/{filename}`: <br>
+    - `GET /images`: <br>
 Handled by the `images-proxy` Lambda, this retrieves all uploaded filenames.
 
     - `GET /images/{filename}`: <br>
@@ -42,8 +42,7 @@ Handled by the `frontend-proxy` Lambda, this fetches the HTML file from `pcg-fro
     Clients never access the S3 buckets directly. Instead, they receive presigned URLs from Lambda functions, enabling secure direct uploads and downloads to and from S3.
 
 -   **API Gateway**: <br>
-
-    -   All client requests pass through an API Gateway, which:
+All client requests pass through an API Gateway, which:
 
     -   Routes requests to the appropriate Lambda functions.
 
