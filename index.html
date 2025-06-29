@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="de">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Image Upload</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 20px;
+                background-color: #f4f4f4;
+            }
+
+            h3 {
+                margin-top: 50px;
+            }
+
+            input[type="file"] {
+                display: none;
+            }
+
+            label {
+                padding: 15px 25px;
+                background-color: #4f8ae8;
+                color: white;
+                font-size: 16px;
+                border: none;
+                cursor: pointer;
+                border-radius: 5px;
+            }
+
+            label:hover {
+                background-color: #679aeb;
+            }
+
+            img {
+                object-fit: contain;
+                width: 100%;
+                height: 100%;
+            }
+
+            button {
+                position: absolute;
+                right: 10px;
+                bottom: 10px;
+                background-color: #e53a37;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                width: 50px;
+                height: 20px;
+                cursor: pointer;
+            }
+
+            button:hover {
+                background-color: #e56a65;
+            }
+
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .container {
+                text-align: center;
+                margin-top: 50px;
+            }
+
+            .imageContainer {
+                position: relative;
+                width: 200px;
+                height: 200px;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                background-color: #bfc2c7;
+            }
+
+            .loader {
+                border: 8px solid #f3f3f3;
+                border-top: 8px solid #3498db;
+                border-radius: 50%;
+                width: 50px;
+                height: 50px;
+                animation: spin 1s linear infinite;
+                margin: 20px auto;
+            }
+
+            .uploadError {
+                background-color: red;
+            }
+
+            #imagesContainer {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+
+            #uploadedImage {
+                display: none;
+                margin-top: 20px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="container">
+            <label id="uploadLabel" for="fileInput">Upload Image</label>
+            <input type="file" id="fileInput" accept=".jpg, .jpeg" onchange="uploadImage()" />
+
+            <div id="loader" class="loader" style="display: none"></div>
+
+            <h3>Uploaded Images:</h3>
+            <div id="imagesContainer"></div>
+        </div>
+
+        <script>
+            async function getPreSignedUrl() {
+                const response = await fetch("/pcg/get-upload-url");
+                if (response.ok) {
+                    const jsonString = await response.json();
+                    const json = JSON.parse(jsonString.body);
+                    return { url: json.uploadUrl, filename: json.fileName };
+                } else {
+                    throw new Error();
+                }
+            }
+
+            async function upload(preSignedUrl, file) {
+                const response = await fetch(preSignedUrl, {
+                    method: "PUT",
+                    body: file,
+                    headers: {
+                        "Content-Type": file.type,
+                    },
+                });
+                if (response.ok) {
+                    loader.style.display = "none";
+                } else {
+                    throw new Error();
+                }
+            }
+
+            async function deleteImage(filename, imageContainer) {
+                const response = await fetch(`/pcg/images/${filename}`, {
+                    method: "DELETE",
+                });
+                imageContainer.remove();
+            }
+
+            async function display(filename) {
+                const imageUrl = `/pcg/images/${filename}`;
+                const imagesContainer = document.getElementById("imagesContainer");
+                const imageContainer = document.createElement("div");
+                const image = document.createElement("img");
+                const deleteButton = document.createElement("button");
+                const response = await fetch(imageUrl);
+                const jsonString = await response.json();
+                const preSignedUrl = jsonString.fetchUrl;
+                imageContainer.classList.add("imageContainer");
+                image.src = preSignedUrl;
+                image.max_width = 200;
+                image.max_height = 200;
+                deleteButton.innerHTML = "Delete";
+                deleteButton.onclick = async () => {
+                    await deleteImage(filename, imageContainer);
+                };
+                imageContainer.appendChild(image);
+                imageContainer.appendChild(deleteButton);
+                imagesContainer.appendChild(imageContainer);
+            }
+
+            async function uploadImage() {
+                try {
+                    const uploadLabel = document.getElementById("uploadLabel");
+                    const fileInput = document.getElementById("fileInput");
+                    const loader = document.getElementById("loader");
+                    const uploadedImage = document.getElementById("uploadedImage");
+                    const imageDisplay = document.getElementById("imageDisplay");
+
+                    if (fileInput.files.length === 0) {
+                        return;
+                    }
+
+                    loader.style.display = "block";
+                    const file = fileInput.files[0];
+                    const response = await getPreSignedUrl();
+                    await upload(response.url, file);
+                    await display(response.filename);
+                    fileInput.value = "";
+                } catch (Error) {
+                    const prevLabel = uploadLabel.innerHTML;
+                    uploadLabel.classList.add("uploadError");
+                    uploadLabel.innerHTML = "Upload Error";
+                    loader.style.display = "none";
+                    fileInput.value = "";
+                    setTimeout(() => {
+                        uploadLabel.classList.remove("uploadError");
+                        uploadLabel.innerHTML = prevLabel;
+                    }, 5000);
+                }
+            }
+
+            async function displayUploaded() {
+                const response = await fetch("/pcg/images/");
+                const jsonString = await response.json();
+                const filenames = JSON.parse(jsonString.body);
+                for (const filename of filenames) {
+                    await display(filename);
+                }
+            }
+
+            displayUploaded().then();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,13 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::499360698869:role/service-role/frontend-proxy-role-5fqbvjjs"
+            },
+            "Action": ["s3:ListBucket", "s3:GetObject"],
+            "Resource": ["arn:aws:s3:::pcg-frontend", "arn:aws:s3:::pcg-frontend/*"]
+        }
+    ]
+}

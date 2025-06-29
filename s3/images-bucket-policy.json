@@ -1,0 +1,29 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::499360698869:role/service-role/get-upload-url-role-dl4d8r3v"
+            },
+            "Action": "s3:PutObject",
+            "Resource": "arn:aws:s3:::pcg-images/*"
+        },
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::499360698869:role/service-role/images-proxy-role-3iolg4ww"
+            },
+            "Action": ["s3:GetObject", "s3:ListBucket"],
+            "Resource": ["arn:aws:s3:::pcg-images/*", "arn:aws:s3:::pcg-images"]
+        },
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::499360698869:role/service-role/images-delete-proxy-role-hnr3yzxn"
+            },
+            "Action": "s3:DeleteObject",
+            "Resource": "arn:aws:s3:::pcg-images/*"
+        }
+    ]
+}
